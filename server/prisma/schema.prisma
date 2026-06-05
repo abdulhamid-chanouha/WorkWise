@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model comments {
+  id        String   @id
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  taskId    String
+  authorId  String
+  users     users    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tasks     tasks    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model documents {
+  id        String   @id
+  title     String
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  projectId String
+  authorId  String
+  users     users    @relation(fields: [authorId], references: [id])
+  projects  projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model invitations {
+  id        String           @id
+  email     String
+  role      Role             @default(DEVELOPER)
+  status    InvitationStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime
+  projectId String
+  senderId  String
+  projects  projects         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  users     users            @relation(fields: [senderId], references: [id])
+}
+
+model notifications {
+  id        String           @id
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  userId    String
+  users     users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model project_members {
+  id        String   @id
+  role      Role     @default(DEVELOPER)
+  joinedAt  DateTime @default(now())
+  userId    String
+  projectId String
+  projects  projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+}
+
+model projects {
+  id              String            @id
+  name            String
+  description     String?
+  key             String            @unique
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  documents       documents[]
+  invitations     invitations[]
+  project_members project_members[]
+  sprints         sprints[]
+  tasks           tasks[]
+}
+
+model sprints {
+  id        String    @id
+  name      String
+  goal      String?
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  projectId String
+  projects  projects  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     tasks[]
+}
+
+model tasks {
+  id                            String       @id
+  title                         String
+  description                   String?
+  status                        TaskStatus   @default(BACKLOG)
+  priority                      TaskPriority @default(MEDIUM)
+  labels                        String[]
+  dueDate                       DateTime?
+  order                         Int          @default(0)
+  createdAt                     DateTime     @default(now())
+  updatedAt                     DateTime
+  projectId                     String
+  sprintId                      String?
+  assigneeId                    String?
+  creatorId                     String
+  comments                      comments[]
+  users_tasks_assigneeIdTousers users?       @relation("tasks_assigneeIdTousers", fields: [assigneeId], references: [id])
+  users_tasks_creatorIdTousers  users        @relation("tasks_creatorIdTousers", fields: [creatorId], references: [id])
+  projects                      projects     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprints                       sprints?     @relation(fields: [sprintId], references: [id])
+}
+
+model users {
+  id                            String            @id
+  name                          String
+  email                         String            @unique
+  password                      String
+  avatarUrl                     String?
+  createdAt                     DateTime          @default(now())
+  updatedAt                     DateTime
+  comments                      comments[]
+  documents                     documents[]
+  invitations                   invitations[]
+  notifications                 notifications[]
+  project_members               project_members[]
+  tasks_tasks_assigneeIdTousers tasks[]           @relation("tasks_assigneeIdTousers")
+  tasks_tasks_creatorIdTousers  tasks[]           @relation("tasks_creatorIdTousers")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_MOVED
+  COMMENT_ADDED
+  MENTION
+  SPRINT_STARTED
+  SPRINT_COMPLETED
+}
+
+enum Role {
+  ADMIN
+  DEVELOPER
+  VIEWER
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+}
