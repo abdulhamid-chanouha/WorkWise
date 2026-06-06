@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import AppShell from '../components/AppShell';
 import ProtectedRoute from '../components/ProtectedRoute';
 import PublicRoute from '../components/PublicRoute';
 import DashboardPage from '../pages/DashboardPage';
@@ -21,7 +22,12 @@ const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
-      { path: '/dashboard', element: <DashboardPage /> },
+      {
+        element: <AppShell />,
+        children: [
+          { path: '/dashboard', element: <DashboardPage /> },
+        ],
+      },
     ],
   },
   {
