@@ -5,10 +5,10 @@ interface HeaderProps {
 }
 
 export default function Header({ onMenuToggle }: HeaderProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   function handleLogout() {
-    // TODO: implement logout — clear auth tokens and redirect to /login
+    logout();
   }
 
   return (
