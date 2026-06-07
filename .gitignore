@@ -16,6 +16,7 @@ server/prisma/*.db-journal
 
 # IDE
 .vscode/
+.vs/
 .idea/
 *.swp
 *.swo
