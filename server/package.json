@@ -1,19 +1,22 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "The server folder holds the entire backend application, this is a placeholder readme. update as you go.",
-  "main": "index.js",
+  "description": "AI Project Management Hub — Backend",
+  "main": "src/server.ts",
+  "type": "commonjs",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "node prisma/seed.js",
+    "db:reset": "prisma migrate reset --force"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -28,8 +31,11 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.1",
-    "prisma": "^6.19.3",
+    "prisma": "^5.22.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.3"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
