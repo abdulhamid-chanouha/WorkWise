@@ -1,20 +1,21 @@
 import jwt from "jsonwebtoken";
+import { env } from "../config/env";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "dev-refresh-secret";
+const jwtSecret = env.jwtSecret as string;
+const jwtRefreshSecret = env.jwtRefreshSecret as string;
 
 export const generateAccessToken = (userId: string, role: string) => {
-  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: "15m" });
+  return jwt.sign({ userId, role }, jwtSecret, { expiresIn: "15m" });
 };
 
 export const generateRefreshToken = (userId: string, role: string) => {
-  return jwt.sign({ userId, role }, JWT_REFRESH_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ userId, role }, jwtRefreshSecret, { expiresIn: "7d" });
 };
 
 export const verifyAccessToken = (token: string) => {
-  return jwt.verify(token, JWT_SECRET);
+  return jwt.verify(token, jwtSecret);
 };
 
 export const verifyRefreshToken = (token: string) => {
-  return jwt.verify(token, JWT_REFRESH_SECRET);
+  return jwt.verify(token, jwtRefreshSecret);
 };
