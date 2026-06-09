@@ -8,129 +8,25 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model comments {
-  id        String   @id
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  taskId    String
-  authorId  String
-  users     users    @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tasks     tasks    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+enum Role {
+  ADMIN
+  DEVELOPER
+  VIEWER
 }
 
-model documents {
-  id        String   @id
-  title     String
-  content   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  projectId String
-  authorId  String
-  users     users    @relation(fields: [authorId], references: [id])
-  projects  projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
 }
 
-model invitations {
-  id        String           @id
-  email     String
-  role      Role             @default(DEVELOPER)
-  status    InvitationStatus @default(PENDING)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime
-  projectId String
-  senderId  String
-  projects  projects         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  users     users            @relation(fields: [senderId], references: [id])
-}
-
-model notifications {
-  id        String           @id
-  type      NotificationType
-  message   String
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  userId    String
-  users     users            @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model project_members {
-  id        String   @id
-  role      Role     @default(DEVELOPER)
-  joinedAt  DateTime @default(now())
-  userId    String
-  projectId String
-  projects  projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, projectId])
-}
-
-model projects {
-  id              String            @id
-  name            String
-  description     String?
-  key             String            @unique
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime
-  documents       documents[]
-  invitations     invitations[]
-  project_members project_members[]
-  sprints         sprints[]
-  tasks           tasks[]
-}
-
-model sprints {
-  id        String    @id
-  name      String
-  goal      String?
-  startDate DateTime?
-  endDate   DateTime?
-  isActive  Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime
-  projectId String
-  projects  projects  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks     tasks[]
-}
-
-model tasks {
-  id                            String       @id
-  title                         String
-  description                   String?
-  status                        TaskStatus   @default(BACKLOG)
-  priority                      TaskPriority @default(MEDIUM)
-  labels                        String[]
-  dueDate                       DateTime?
-  order                         Int          @default(0)
-  createdAt                     DateTime     @default(now())
-  updatedAt                     DateTime
-  projectId                     String
-  sprintId                      String?
-  assigneeId                    String?
-  creatorId                     String
-  comments                      comments[]
-  users_tasks_assigneeIdTousers users?       @relation("tasks_assigneeIdTousers", fields: [assigneeId], references: [id])
-  users_tasks_creatorIdTousers  users        @relation("tasks_creatorIdTousers", fields: [creatorId], references: [id])
-  projects                      projects     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sprints                       sprints?     @relation(fields: [sprintId], references: [id])
-}
-
-model users {
-  id                            String            @id
-  name                          String
-  email                         String            @unique
-  password                      String
-  avatarUrl                     String?
-  createdAt                     DateTime          @default(now())
-  updatedAt                     DateTime
-  comments                      comments[]
-  documents                     documents[]
-  invitations                   invitations[]
-  notifications                 notifications[]
-  project_members               project_members[]
-  tasks_tasks_assigneeIdTousers tasks[]           @relation("tasks_assigneeIdTousers")
-  tasks_tasks_creatorIdTousers  tasks[]           @relation("tasks_creatorIdTousers")
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 enum InvitationStatus {
@@ -148,23 +44,160 @@ enum NotificationType {
   SPRINT_COMPLETED
 }
 
-enum Role {
-  ADMIN
-  DEVELOPER
-  VIEWER
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectMembers  ProjectMember[]
+  assignedTasks   Task[]          @relation("TaskAssignee")
+  createdTasks    Task[]          @relation("TaskCreator")
+  comments        Comment[]
+  notifications   Notification[]
+  documents       Document[]
+  invitationsSent Invitation[]    @relation("InvitationSender")
+
+  @@map("users")
 }
 
-enum TaskPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  key         String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     ProjectMember[]
+  tasks       Task[]
+  sprints     Sprint[]
+  documents   Document[]
+  invitations Invitation[]
+
+  @@map("projects")
 }
 
-enum TaskStatus {
-  BACKLOG
-  TODO
-  IN_PROGRESS
-  IN_REVIEW
-  DONE
+model ProjectMember {
+  id       String   @id @default(cuid())
+  role     Role     @default(DEVELOPER)
+  joinedAt DateTime @default(now())
+
+  userId    String
+  projectId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@map("project_members")
+}
+
+model Sprint {
+  id        String    @id @default(cuid())
+  name      String
+  goal      String?
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  projectId String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@map("sprints")
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(BACKLOG)
+  priority    TaskPriority @default(MEDIUM)
+  labels      String[]
+  dueDate     DateTime?
+  order       Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  projectId  String
+  sprintId   String?
+  assigneeId String?
+  creatorId  String
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprint   Sprint?   @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  assignee User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  creator  User      @relation("TaskCreator", fields: [creatorId], references: [id])
+  comments Comment[]
+
+  @@map("tasks")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  taskId   String
+  authorId String
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String
+  authorId  String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id])
+
+  @@map("documents")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Invitation {
+  id        String           @id @default(cuid())
+  email     String
+  role      Role             @default(DEVELOPER)
+  status    InvitationStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  projectId String
+  senderId  String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sender  User    @relation("InvitationSender", fields: [senderId], references: [id])
+
+  @@map("invitations")
 }

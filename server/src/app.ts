@@ -21,7 +21,7 @@ app.use(
 );
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   limit: 20,
   message: {
     success: false,
@@ -32,6 +32,7 @@ const authLimiter = rateLimit({
 });
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/", healthRoutes);
 app.use("/auth", authLimiter, authRoutes);
