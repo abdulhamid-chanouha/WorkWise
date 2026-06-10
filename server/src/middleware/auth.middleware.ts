@@ -25,7 +25,7 @@ export const authenticate = (
 
     const token = authHeader.split(" ")[1];
 
-    const decoded = verifyAccessToken(token) as {
+    const decoded = verifyAccessToken(token) as unknown as {
       userId: string;
       role: string;
     };
