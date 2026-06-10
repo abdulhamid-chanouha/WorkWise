@@ -3,7 +3,7 @@ import prisma from "../utils/prisma";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
 
 export const registerUser = async (name: string, email: string, password: string) => {
-  const existingUser = await prisma.users.findUnique({
+  const existingUser = await prisma.user.findUnique({
     where: { email },
   });
 
@@ -13,7 +13,7 @@ export const registerUser = async (name: string, email: string, password: string
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await prisma.users.create({
+  const user = await prisma.user.create({
     data: {
       id: crypto.randomUUID(),
       name,
@@ -38,7 +38,7 @@ export const registerUser = async (name: string, email: string, password: string
 };
 
 export const loginUser = async (email: string, password: string) => {
-  const user = await prisma.users.findUnique({
+  const user = await prisma.user.findUnique({
     where: { email },
   });
 

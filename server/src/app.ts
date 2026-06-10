@@ -2,23 +2,19 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-
 import healthRoutes from "./routes/health.routes";
 import authRoutes from "./routes/auth.routes";
-
+import projectsRoutes from "./modules/projects/projects.routes";
 import { errorHandler } from "./middleware/error.middleware";
 import { env } from "./config/env";
 
 const app = express();
 
 app.use(helmet());
-
-app.use(
-  cors({
-    origin: env.frontendUrl,
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: env.frontendUrl,
+  credentials: true,
+}));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -34,8 +30,10 @@ const authLimiter = rateLimit({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ── Routes ─────────────────────────────────────────────────
 app.use("/", healthRoutes);
 app.use("/auth", authLimiter, authRoutes);
+app.use("/api/projects", projectsRoutes);
 
 app.use(errorHandler);
 
