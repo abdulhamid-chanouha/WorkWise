@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import healthRoutes from "./routes/health.routes";
 import authRoutes from "./routes/auth.routes";
 import taskRoutes from "./routes/task.routes";
+import commentRoutes from "./routes/comment.routes";
 
 import { errorHandler } from "./middleware/error.middleware";
 import { env } from "./config/env";
@@ -38,6 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/", healthRoutes);
 app.use("/auth", authLimiter, authRoutes);
 app.use("/tasks", taskRoutes);
+app.use("/comments", commentRoutes);
 
 app.use(errorHandler);
 
