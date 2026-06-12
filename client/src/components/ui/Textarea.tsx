@@ -22,9 +22,9 @@ export default function Textarea({
   const descriptionId = error || helperText ? `${textareaId}-description` : undefined;
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="field">
       {label && (
-        <label htmlFor={textareaId} className="text-sm font-medium text-gray-700">
+        <label htmlFor={textareaId} className="field-label">
           {label}
         </label>
       )}
@@ -33,15 +33,11 @@ export default function Textarea({
         id={textareaId}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={descriptionId}
-        className={`rounded-md border px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 ${
-          error
-            ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
-            : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-        } ${className}`}
+        className={`field-control ${error ? 'field-control-error' : ''} ${className}`}
         {...rest}
       />
       {(error || helperText) && (
-        <p id={descriptionId} className={`text-xs ${error ? 'text-red-600' : 'text-gray-500'}`}>
+        <p id={descriptionId} className={`field-help ${error ? 'field-error' : ''}`}>
           {error || helperText}
         </p>
       )}

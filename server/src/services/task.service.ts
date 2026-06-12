@@ -15,8 +15,11 @@ export interface CreateTaskInput {
 }
 
 export const createTask = async (input: CreateTaskInput) => {
-  const project = await prisma.project.findUnique({
-    where: { id: input.projectId },
+  const project = await prisma.project.findFirst({
+    where: {
+      id: input.projectId,
+      members: { some: { userId: input.creatorId } },
+    },
   });
 
   if (!project) {
@@ -24,12 +27,17 @@ export const createTask = async (input: CreateTaskInput) => {
   }
 
   if (input.assigneeId) {
-    const assignee = await prisma.user.findUnique({
-      where: { id: input.assigneeId },
+    const assignee = await prisma.projectMember.findUnique({
+      where: {
+        userId_projectId: {
+          userId: input.assigneeId,
+          projectId: input.projectId,
+        },
+      },
     });
 
     if (!assignee) {
-      throw new NotFoundError("Assignee not found");
+      throw new NotFoundError("Assignee is not a project member");
     }
   }
 
@@ -38,7 +46,7 @@ export const createTask = async (input: CreateTaskInput) => {
       where: { id: input.sprintId },
     });
 
-    if (!sprint) {
+    if (!sprint || sprint.projectId !== input.projectId) {
       throw new NotFoundError("Sprint not found");
     }
   }

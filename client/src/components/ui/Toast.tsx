@@ -9,9 +9,9 @@ export interface ToastItem {
 }
 
 const variantStyles: Record<ToastVariant, string> = {
-  success: 'border-green-200 bg-green-50 text-green-800',
-  error: 'border-red-200 bg-red-50 text-red-800',
-  info: 'border-blue-200 bg-blue-50 text-blue-800',
+  success: 'alert-success',
+  error: 'alert-error',
+  info: 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text)]',
 };
 
 const variantIcons: Record<ToastVariant, ReactNode> = {
@@ -45,7 +45,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
   return (
     <div
       role="alert"
-      className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-md ${variantStyles[toast.variant]}`}
+      className={`toast flex items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-md ${variantStyles[toast.variant]}`}
     >
       {variantIcons[toast.variant]}
       <p className="flex-1">{toast.message}</p>

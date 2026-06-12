@@ -2,11 +2,11 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-
+import userRoutes from './modules/users/users.routes';
 import healthRoutes from "./routes/health.routes";
 import authRoutes from "./routes/auth.routes";
 import taskRoutes from "./routes/task.routes";
-
+import projectRoutes from "./modules/projects/projects.routes";
 import { errorHandler } from "./middleware/error.middleware";
 import { env } from "./config/env";
 
@@ -38,7 +38,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/", healthRoutes);
 app.use("/auth", authLimiter, authRoutes);
 app.use("/tasks", taskRoutes);
-
+app.use("/api/projects", projectRoutes);
+app.use('/api/users', userRoutes);
 app.use(errorHandler);
 
 export default app;

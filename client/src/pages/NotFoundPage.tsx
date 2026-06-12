@@ -1,18 +1,18 @@
 import { Link } from 'react-router-dom';
+import Brand from '../components/Brand';
+import Icon from '../components/Icon';
 
 export default function NotFoundPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <p className="text-5xl font-bold text-gray-300">404</p>
-        <h1 className="mt-4 text-xl font-semibold text-gray-900">Page not found</h1>
-        <Link
-          to="/"
-          className="mt-6 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-        >
-          Go home
-        </Link>
+    <main className="auth-panel min-h-screen">
+      <div className="auth-panel-controls"><Brand /></div>
+      <div className="app-card empty-panel w-full max-w-lg">
+        <span className="empty-icon"><Icon name="search" size={26} /></span>
+        <p className="page-eyebrow">Error 404</p>
+        <h1 className="page-title text-3xl">This page wandered off.</h1>
+        <p>The link may be outdated, or the page might have moved to a new workspace.</p>
+        <Link to="/" className="btn btn-primary">Return home <Icon name="arrow-right" size={16} /></Link>
       </div>
-    </div>
+    </main>
   );
 }

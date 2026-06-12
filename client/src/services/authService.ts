@@ -4,6 +4,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string | null;
 }
 
 export interface AuthResponse {
@@ -23,16 +24,32 @@ export interface RegisterPayload {
   password: string;
 }
 
-// TODO: SCRUM-54 (auth API) isn't merged yet — these calls are stubbed against
-// its expected contract: POST /auth/login and /auth/register both return
-// { user: { id, name, email }, accessToken, refreshToken }.
+export interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+}
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
-  const { data } = await apiClient.post<AuthResponse>('/auth/login', payload);
-  return data;
+  const { data } = await apiClient.post<{ success: boolean; data: AuthResponse }>('/auth/login', payload);
+  return data.data;
 }
 
 export async function register(payload: RegisterPayload): Promise<AuthResponse> {
-  const { data } = await apiClient.post<AuthResponse>('/auth/register', payload);
-  return data;
+  const { data } = await apiClient.post<{ success: boolean; data: AuthResponse }>('/auth/register', payload);
+  return data.data;
+}
+
+export async function refreshToken(token: string): Promise<RefreshResponse> {
+  const { data } = await apiClient.post<{ success: boolean; data: RefreshResponse }>('/auth/refresh', {
+    refreshToken: token,
+  });
+  return data.data;
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await apiClient.post('/auth/forgot-password', { email });
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await apiClient.post('/auth/reset-password', { token, password });
 }

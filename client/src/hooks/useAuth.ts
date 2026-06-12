@@ -1,12 +1,14 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/auth-context';
-import type { LoginPayload, RegisterPayload } from '../services/authService';
+import type { LoginPayload, RegisterPayload, User } from '../services/authService';
 
 export interface AuthState {
   isAuthenticated: boolean;
-  user: { name: string; initials: string };
+  isInitializing: boolean;
+  user: { id: string; name: string; email: string; initials: string; avatarUrl?: string | null };
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
+  updateUser: (user: User) => void;
   logout: () => void;
 }
 
@@ -23,16 +25,21 @@ export function useAuth(): AuthState {
     throw new Error('useAuth must be used within an AuthProvider');
   }
 
-  const { user, isAuthenticated, login, register, logout } = context;
+  const { user, isAuthenticated, isInitializing, login, register, updateUser, logout } = context;
 
   return {
     isAuthenticated,
+    isInitializing,
     user: {
+      id: user?.id ?? '',
       name: user?.name ?? '',
+      email: user?.email ?? '',
       initials: user ? getInitials(user.name) : '',
+      avatarUrl: user?.avatarUrl,
     },
     login,
     register,
+    updateUser,
     logout,
   };
 }

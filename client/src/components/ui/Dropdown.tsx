@@ -97,7 +97,7 @@ export default function Dropdown({ trigger, items, align = 'left' }: DropdownPro
           id={menuId}
           role="menu"
           onKeyDown={handleMenuKeyDown}
-          className={`absolute z-10 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg focus:outline-none ${
+          className={`dropdown-menu absolute z-10 mt-2 w-48 p-1.5 focus:outline-none ${
             align === 'right' ? 'right-0' : 'left-0'
           }`}
         >
@@ -112,8 +112,8 @@ export default function Dropdown({ trigger, items, align = 'left' }: DropdownPro
               tabIndex={-1}
               disabled={item.disabled}
               onClick={() => handleSelect(item)}
-              className={`block w-full px-4 py-2 text-left text-sm transition-colors focus:bg-gray-100 focus:outline-none ${
-                item.disabled ? 'cursor-not-allowed text-gray-400' : 'text-gray-700 hover:bg-gray-50'
+              className={`dropdown-item block w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus:outline-none ${
+                item.disabled ? 'cursor-not-allowed opacity-40' : ''
               }`}
             >
               {item.label}
