@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Task } from "../services/taskService";
 
 type SortKey = "title" | "status" | "priority" | "assignee";
@@ -68,18 +68,22 @@ export default function BacklogList() {
   const [assigneeFilter, setAssigneeFilter] = useState("");
   const [labelFilter, setLabelFilter] = useState("");
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
+
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
+      const normalizedSearch = search.toLowerCase();
+
       const matchesSearch =
-        task.title.toLowerCase().includes(search.toLowerCase()) ||
-        task.description?.toLowerCase().includes(search.toLowerCase());
+        task.title.toLowerCase().includes(normalizedSearch) ||
+        task.description?.toLowerCase().includes(normalizedSearch);
 
       const matchesStatus = !statusFilter || task.status === statusFilter;
       const matchesPriority = !priorityFilter || task.priority === priorityFilter;
       const matchesAssignee =
         !assigneeFilter || task.assignee?.name === assigneeFilter;
-      const matchesLabel =
-        !labelFilter || task.labels?.includes(labelFilter);
+      const matchesLabel = !labelFilter || task.labels?.includes(labelFilter);
 
       return (
         matchesSearch &&
@@ -103,15 +107,16 @@ export default function BacklogList() {
   }, [filteredTasks, sortKey, sortDirection]);
 
   const totalPages = Math.max(1, Math.ceil(sortedTasks.length / pageSize));
-  const paginatedTasks = sortedTasks.slice((page - 1) * pageSize, page * pageSize);
+  const paginatedTasks = sortedTasks.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
   const assignees = Array.from(
     new Set(tasks.map((task) => task.assignee?.name).filter(Boolean))
   );
 
-  const labels = Array.from(
-    new Set(tasks.flatMap((task) => task.labels ?? []))
-  );
+  const labels = Array.from(new Set(tasks.flatMap((task) => task.labels ?? [])));
 
   function resetPage() {
     setPage(1);
@@ -138,7 +143,9 @@ export default function BacklogList() {
 
   function toggleCurrentPageSelection() {
     const currentPageIds = paginatedTasks.map((task) => task.id);
-    const allSelected = currentPageIds.every((id) => selectedTaskIds.includes(id));
+    const allSelected = currentPageIds.every((id) =>
+      selectedTaskIds.includes(id)
+    );
 
     if (allSelected) {
       setSelectedTaskIds((current) =>
@@ -164,6 +171,48 @@ export default function BacklogList() {
     paginatedTasks.length > 0 &&
     paginatedTasks.every((task) => selectedTaskIds.includes(task.id));
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement;
+
+      const isTyping =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable;
+
+      if (isTyping) return;
+
+      if (event.key === "/") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+
+      if (event.key === "?") {
+        event.preventDefault();
+        setIsShortcutModalOpen(true);
+      }
+
+      if (event.key.toLowerCase() === "b") {
+        window.location.href = "/dashboard";
+      }
+
+      if (event.key.toLowerCase() === "c") {
+        window.alert("Create task shortcut triggered. Create task modal coming soon.");
+      }
+
+      if (event.key === "Escape") {
+        setIsShortcutModalOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
     <div className="rounded-xl bg-white p-6 shadow">
       <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -175,20 +224,33 @@ export default function BacklogList() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button type="button" disabled={selectedTaskIds.length === 0} className="rounded-md border px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50">
-            Bulk move
+          <button
+            type="button"
+            disabled={selectedTaskIds.length === 0}
+            className="rounded-md border px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Change Status
           </button>
-          <button type="button" disabled={selectedTaskIds.length === 0} className="rounded-md border px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50">
-            Bulk assign
+          <button
+            type="button"
+            disabled={selectedTaskIds.length === 0}
+            className="rounded-md border px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Assign Tasks
           </button>
-          <button type="button" disabled={selectedTaskIds.length === 0} className="rounded-md border px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50">
-            Delete selected
+          <button
+            type="button"
+            disabled={selectedTaskIds.length === 0}
+            className="rounded-md border px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Delete Selected
           </button>
         </div>
       </div>
 
       <div className="mb-4 grid gap-3 md:grid-cols-5">
         <input
+          ref={searchInputRef}
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);
@@ -198,7 +260,14 @@ export default function BacklogList() {
           className="rounded-md border px-3 py-2 text-sm md:col-span-2"
         />
 
-        <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); resetPage(); }} className="rounded-md border px-3 py-2 text-sm">
+        <select
+          value={statusFilter}
+          onChange={(event) => {
+            setStatusFilter(event.target.value);
+            resetPage();
+          }}
+          className="rounded-md border px-3 py-2 text-sm"
+        >
           <option value="">All statuses</option>
           <option value="BACKLOG">Backlog</option>
           <option value="TODO">To Do</option>
@@ -207,7 +276,14 @@ export default function BacklogList() {
           <option value="DONE">Done</option>
         </select>
 
-        <select value={priorityFilter} onChange={(event) => { setPriorityFilter(event.target.value); resetPage(); }} className="rounded-md border px-3 py-2 text-sm">
+        <select
+          value={priorityFilter}
+          onChange={(event) => {
+            setPriorityFilter(event.target.value);
+            resetPage();
+          }}
+          className="rounded-md border px-3 py-2 text-sm"
+        >
           <option value="">All priorities</option>
           <option value="LOW">Low</option>
           <option value="MEDIUM">Medium</option>
@@ -215,7 +291,14 @@ export default function BacklogList() {
           <option value="URGENT">Urgent</option>
         </select>
 
-        <select value={assigneeFilter} onChange={(event) => { setAssigneeFilter(event.target.value); resetPage(); }} className="rounded-md border px-3 py-2 text-sm">
+        <select
+          value={assigneeFilter}
+          onChange={(event) => {
+            setAssigneeFilter(event.target.value);
+            resetPage();
+          }}
+          className="rounded-md border px-3 py-2 text-sm"
+        >
           <option value="">All assignees</option>
           {assignees.map((assignee) => (
             <option key={assignee} value={assignee}>
@@ -224,7 +307,14 @@ export default function BacklogList() {
           ))}
         </select>
 
-        <select value={labelFilter} onChange={(event) => { setLabelFilter(event.target.value); resetPage(); }} className="rounded-md border px-3 py-2 text-sm">
+        <select
+          value={labelFilter}
+          onChange={(event) => {
+            setLabelFilter(event.target.value);
+            resetPage();
+          }}
+          className="rounded-md border px-3 py-2 text-sm"
+        >
           <option value="">All labels</option>
           {labels.map((label) => (
             <option key={label} value={label}>
@@ -236,13 +326,39 @@ export default function BacklogList() {
 
       {(search || statusFilter || priorityFilter || assigneeFilter || labelFilter) && (
         <div className="mb-4 flex flex-wrap gap-2">
-          {search && <FilterChip label={`Search: ${search}`} onRemove={() => setSearch("")} />}
-          {statusFilter && <FilterChip label={`Status: ${statusFilter}`} onRemove={() => setStatusFilter("")} />}
-          {priorityFilter && <FilterChip label={`Priority: ${priorityFilter}`} onRemove={() => setPriorityFilter("")} />}
-          {assigneeFilter && <FilterChip label={`Assignee: ${assigneeFilter}`} onRemove={() => setAssigneeFilter("")} />}
-          {labelFilter && <FilterChip label={`Label: ${labelFilter}`} onRemove={() => setLabelFilter("")} />}
+          {search && (
+            <FilterChip label={`Search: ${search}`} onRemove={() => setSearch("")} />
+          )}
+          {statusFilter && (
+            <FilterChip
+              label={`Status: ${statusFilter}`}
+              onRemove={() => setStatusFilter("")}
+            />
+          )}
+          {priorityFilter && (
+            <FilterChip
+              label={`Priority: ${priorityFilter}`}
+              onRemove={() => setPriorityFilter("")}
+            />
+          )}
+          {assigneeFilter && (
+            <FilterChip
+              label={`Assignee: ${assigneeFilter}`}
+              onRemove={() => setAssigneeFilter("")}
+            />
+          )}
+          {labelFilter && (
+            <FilterChip
+              label={`Label: ${labelFilter}`}
+              onRemove={() => setLabelFilter("")}
+            />
+          )}
 
-          <button type="button" onClick={clearFilters} className="text-sm text-gray-500 underline">
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="text-sm text-gray-500 underline"
+          >
             Clear all
           </button>
         </div>
@@ -253,13 +369,43 @@ export default function BacklogList() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left">
-                <input type="checkbox" checked={currentPageAllSelected} onChange={toggleCurrentPageSelection} />
+                <input
+                  type="checkbox"
+                  checked={currentPageAllSelected}
+                  onChange={toggleCurrentPageSelection}
+                />
               </th>
-              <SortableHeader label="Title" column="title" sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
-              <SortableHeader label="Status" column="status" sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
-              <SortableHeader label="Priority" column="priority" sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
-              <SortableHeader label="Assignee" column="assignee" sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">Due Date</th>
+              <SortableHeader
+                label="Title"
+                column="title"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+              <SortableHeader
+                label="Status"
+                column="status"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+              <SortableHeader
+                label="Priority"
+                column="priority"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+              <SortableHeader
+                label="Assignee"
+                column="assignee"
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+              <th className="px-4 py-3 text-left font-semibold text-gray-700">
+                Due Date
+              </th>
             </tr>
           </thead>
 
@@ -267,13 +413,23 @@ export default function BacklogList() {
             {paginatedTasks.map((task) => (
               <tr key={task.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3">
-                  <input type="checkbox" checked={selectedTaskIds.includes(task.id)} onChange={() => toggleTaskSelection(task.id)} />
+                  <input
+                    type="checkbox"
+                    checked={selectedTaskIds.includes(task.id)}
+                    onChange={() => toggleTaskSelection(task.id)}
+                  />
                 </td>
-                <td className="px-4 py-3 font-medium text-gray-900">{task.title}</td>
+                <td className="px-4 py-3 font-medium text-gray-900">
+                  {task.title}
+                </td>
                 <td className="px-4 py-3 text-gray-600">{task.status}</td>
                 <td className="px-4 py-3 text-gray-600">{task.priority}</td>
-                <td className="px-4 py-3 text-gray-600">{task.assignee?.name ?? "Unassigned"}</td>
-                <td className="px-4 py-3 text-gray-600">{task.dueDate ?? "No due date"}</td>
+                <td className="px-4 py-3 text-gray-600">
+                  {task.assignee?.name ?? "Unassigned"}
+                </td>
+                <td className="px-4 py-3 text-gray-600">
+                  {task.dueDate ?? "No due date"}
+                </td>
               </tr>
             ))}
 
@@ -294,14 +450,52 @@ export default function BacklogList() {
         </span>
 
         <div className="flex gap-2">
-          <button type="button" disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-md border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50">
+          <button
+            type="button"
+            disabled={page === 1}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            className="rounded-md border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
+          >
             Previous
           </button>
-          <button type="button" disabled={page === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="rounded-md border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50">
+          <button
+            type="button"
+            disabled={page === totalPages}
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            className="rounded-md border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
+          >
             Next
           </button>
         </div>
       </div>
+
+      {isShortcutModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Keyboard Shortcuts
+              </h2>
+
+              <button
+                type="button"
+                onClick={() => setIsShortcutModalOpen(false)}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="space-y-3 text-sm text-gray-700">
+              <ShortcutRow shortcut="/" description="Focus task search" />
+              <ShortcutRow shortcut="?" description="Open shortcuts help" />
+              <ShortcutRow shortcut="B" description="Go to board view" />
+              <ShortcutRow shortcut="C" description="Create task" />
+              <ShortcutRow shortcut="Esc" description="Close shortcuts help" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -311,14 +505,41 @@ function getSortValue(task: BacklogTask, key: SortKey): string {
   return String(task[key] ?? "");
 }
 
-function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+function FilterChip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
       {label}
-      <button type="button" onClick={onRemove} className="font-semibold text-gray-500">
+      <button
+        type="button"
+        onClick={onRemove}
+        className="font-semibold text-gray-500"
+      >
         ×
       </button>
     </span>
+  );
+}
+
+function ShortcutRow({
+  shortcut,
+  description,
+}: {
+  shortcut: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <kbd className="rounded border bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
+        {shortcut}
+      </kbd>
+      <span>{description}</span>
+    </div>
   );
 }
 
@@ -330,12 +551,22 @@ interface SortableHeaderProps {
   onSort: (column: SortKey) => void;
 }
 
-function SortableHeader({ label, column, sortKey, sortDirection, onSort }: SortableHeaderProps) {
+function SortableHeader({
+  label,
+  column,
+  sortKey,
+  sortDirection,
+  onSort,
+}: SortableHeaderProps) {
   const active = sortKey === column;
 
   return (
     <th className="px-4 py-3 text-left font-semibold text-gray-700">
-      <button type="button" onClick={() => onSort(column)} className="inline-flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="inline-flex items-center gap-1"
+      >
         {label}
         {active && <span>{sortDirection === "asc" ? "↑" : "↓"}</span>}
       </button>
