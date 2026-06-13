@@ -6,6 +6,7 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt";
 
+
 const DEFAULT_ROLE = "DEVELOPER";
 
 export const registerUser = async (
@@ -44,6 +45,7 @@ export const registerUser = async (
     refreshToken,
   };
 };
+
 
 export const loginUser = async (
   email: string,
