@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
+import KanbanBoard from '../components/KanbanBoard';
 import Icon from '../components/Icon';
 import { Button } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
@@ -54,6 +55,10 @@ export default function DashboardPage() {
             <p className="stat-label">Across your workspace</p>
           </article>
         ))}
+      </section>
+
+      <section className="animate-enter-delay" aria-label="Task board">
+        <KanbanBoard />
       </section>
 
       <section className="dashboard-grid animate-enter-delay">

@@ -1,25 +1,22 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import userRoutes from './modules/users/users.routes';
-import healthRoutes from "./routes/health.routes";
-import authRoutes from "./routes/auth.routes";
-import taskRoutes from "./routes/task.routes";
-import projectRoutes from "./modules/projects/projects.routes";
-import { errorHandler } from "./middleware/error.middleware";
-import { env } from "./config/env";
+import healthRoutes from './routes/health.routes';
+import authRoutes from './routes/auth.routes';
+import projectRoutes from './modules/projects/projects.routes';
+import taskRoutes from './routes/task.routes';
+import { errorHandler } from './middleware/error.middleware';
+import { env } from './config/env';
 
 const app = express();
 
 app.use(helmet());
-
-app.use(
-  cors({
-    origin: env.frontendUrl,
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: env.frontendUrl,
+  credentials: true,
+}));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -27,7 +24,7 @@ const authLimiter = rateLimit({
   message: {
     success: false,
     status: 429,
-    message: "Too many authentication attempts. Please try again later.",
+    message: 'Too many authentication attempts. Please try again later.',
     details: null,
   },
 });
@@ -35,10 +32,10 @@ const authLimiter = rateLimit({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/", healthRoutes);
-app.use("/auth", authLimiter, authRoutes);
-app.use("/tasks", taskRoutes);
-app.use("/api/projects", projectRoutes);
+app.use('/', healthRoutes);
+app.use('/auth', authLimiter, authRoutes);
+app.use('/tasks', taskRoutes);
+app.use('/api/projects', projectRoutes);
 app.use('/api/users', userRoutes);
 app.use(errorHandler);
 
