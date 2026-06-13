@@ -2,21 +2,25 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import * as authService from '../services/authService';
 import type { LoginPayload, RegisterPayload, User } from '../services/authService';
-import { clearStoredAuth, getStoredAuth, setStoredAuth } from '../services/authStorage';
+import { clearStoredAuth, getStoredAuth, setStoredAuth, updateStoredUser } from '../services/authStorage';
+import { getMyProfile } from '../services/userService';
 import { setAuthHandlers } from '../services/apiClient';
 import { AuthContext } from './auth-context';
 import type { AuthContextValue } from './auth-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Restored synchronously from storage — no backend validation endpoint
-  // exists yet, so presence of a persisted session is treated as "authenticated".
-  // TODO: once SCRUM-54 ships, validate the persisted token against
-  // /auth/refresh here instead of trusting local storage outright.
-  const [user, setUser] = useState<User | null>(() => getStoredAuth()?.user ?? null);
+  const [initialAuth] = useState(getStoredAuth);
+  const [user, setUser] = useState<User | null>(null);
+  const [isInitializing, setIsInitializing] = useState(initialAuth !== null);
 
   const logout = useCallback(() => {
     clearStoredAuth();
     setUser(null);
+  }, []);
+
+  const updateUser = useCallback((nextUser: User) => {
+    updateStoredUser(nextUser);
+    setUser(nextUser);
   }, []);
 
   const login = useCallback(async (payload: LoginPayload) => {
@@ -26,28 +30,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (payload: RegisterPayload) => {
-    const response = await authService.register(payload);
-    setStoredAuth(response);
-    setUser(response.user);
+    await authService.register(payload);
   }, []);
 
-  // Let the API client force a logout on 401 (token already cleared by the
-  // interceptor itself — we just need to drop the in-memory user so
-  // ProtectedRoute redirects to /login).
   useEffect(() => {
     setAuthHandlers({ onUnauthorized: logout });
     return () => setAuthHandlers({ onUnauthorized: undefined });
   }, [logout]);
 
+  useEffect(() => {
+    let active = true;
+    const stored = initialAuth;
+
+    if (!stored) {
+      return () => { active = false; };
+    }
+
+    getMyProfile()
+      .then((profile) => {
+        if (!active) return;
+        updateUser({ id: profile.id, name: profile.name, email: profile.email, avatarUrl: profile.avatarUrl });
+      })
+      .catch(() => {
+        if (active) logout();
+      })
+      .finally(() => {
+        if (active) setIsInitializing(false);
+      });
+
+    return () => { active = false; };
+  }, [initialAuth, logout, updateUser]);
+
   const value = useMemo<AuthContextValue>(
-    () => ({
-      user,
-      isAuthenticated: user !== null,
-      login,
-      register,
-      logout,
-    }),
-    [user, login, register, logout]
+    () => ({ user, isAuthenticated: user !== null, isInitializing, login, register, updateUser, logout }),
+    [user, isInitializing, login, register, updateUser, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

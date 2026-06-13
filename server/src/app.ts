@@ -1,13 +1,15 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import healthRoutes from "./routes/health.routes";
-import authRoutes from "./routes/auth.routes";
-import taskRoutes from "./routes/task.routes";
-import commentRoutes from "./routes/comment.routes";
-import { errorHandler } from "./middleware/error.middleware";
-import { env } from "./config/env";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import userRoutes from './modules/users/users.routes';
+import healthRoutes from './routes/health.routes';
+import authRoutes from './routes/auth.routes';
+import projectRoutes from './modules/projects/projects.routes';
+import taskRoutes from './routes/task.routes';
+import commentRoutes from './routes/comment.routes';
+import { errorHandler } from './middleware/error.middleware';
+import { env } from './config/env';
 
 const app = express();
 
@@ -23,7 +25,7 @@ const authLimiter = rateLimit({
   message: {
     success: false,
     status: 429,
-    message: "Too many authentication attempts. Please try again later.",
+    message: 'Too many authentication attempts. Please try again later.',
     details: null,
   },
 });
@@ -31,13 +33,12 @@ const authLimiter = rateLimit({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Routes ─────────────────────────────────────────────────
-app.use("/", healthRoutes);
-app.use("/auth", authLimiter, authRoutes);
-
-app.use("/tasks", taskRoutes);
-app.use("/comments", commentRoutes);
-
+app.use('/', healthRoutes);
+app.use('/auth', authLimiter, authRoutes);
+app.use('/tasks', taskRoutes);
+app.use('/comments', commentRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/users', userRoutes);
 app.use(errorHandler);
 
 export default app;

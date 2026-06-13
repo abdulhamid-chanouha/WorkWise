@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+
 const requiredEnvVars = [
   "DATABASE_URL",
   "DIRECT_URL",
@@ -23,4 +24,8 @@ export const env = {
   directUrl: process.env.DIRECT_URL,
   jwtSecret: process.env.JWT_SECRET,
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
+  email: {
+    resendApiKey: process.env.RESEND_API_KEY?.trim(),
+    from: process.env.EMAIL_FROM || "WorkWise <onboarding@resend.dev>",
+  },
 };

@@ -1,219 +1,152 @@
-import { useMemo, useState } from "react";
-import type { Task } from "../services/taskService";
+import { useMemo, useState } from 'react';
+import Icon from './Icon';
+import { Button } from './ui';
+import type { Task } from '../services/taskService';
 
-type SortKey = "title" | "status" | "priority" | "assignee";
-type SortDirection = "asc" | "desc";
+type SortKey = 'title' | 'status' | 'priority' | 'assignee';
+type SortDirection = 'asc' | 'desc';
 
 interface BacklogTask extends Task {
   dueDate?: string;
 }
 
 const mockTasks: BacklogTask[] = [
-  {
-    id: "task-1",
-    title: "Set up authentication system",
-    priority: "HIGH",
-    status: "TODO",
-    assignee: { id: "1", name: "Yehia", email: "yehia@team1.com" },
-    dueDate: "2026-06-20",
-  },
-  {
-    id: "task-2",
-    title: "Build Kanban board UI",
-    priority: "HIGH",
-    status: "IN_PROGRESS",
-    assignee: { id: "2", name: "Hadi", email: "hadi@team1.com" },
-    dueDate: "2026-06-22",
-  },
-  {
-    id: "task-3",
-    title: "Create backlog list view",
-    priority: "MEDIUM",
-    status: "BACKLOG",
-    assignee: null,
-    dueDate: "2026-06-25",
-  },
-  {
-    id: "task-4",
-    title: "Add task filtering",
-    priority: "LOW",
-    status: "BACKLOG",
-    assignee: { id: "3", name: "Taimour", email: "taimour@team1.com" },
-    dueDate: "2026-06-28",
-  },
+  { id: 'task-1', title: 'Set up authentication system', priority: 'HIGH', status: 'TODO', assignee: { id: '1', name: 'Yehia', email: 'yehia@team1.com' }, dueDate: '2026-06-20' },
+  { id: 'task-2', title: 'Build Kanban board UI', priority: 'HIGH', status: 'IN_PROGRESS', assignee: { id: '2', name: 'Hadi', email: 'hadi@team1.com' }, dueDate: '2026-06-22' },
+  { id: 'task-3', title: 'Create backlog list view', priority: 'MEDIUM', status: 'BACKLOG', assignee: null, dueDate: '2026-06-25' },
+  { id: 'task-4', title: 'Add task filtering', priority: 'LOW', status: 'BACKLOG', assignee: { id: '3', name: 'Taimour', email: 'taimour@team1.com' }, dueDate: '2026-06-28' },
 ];
 
 const pageSize = 3;
 
+function getInitials(name?: string) {
+  if (!name) return '?';
+  return name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function formatStatus(status: string) {
+  return status.toLowerCase().split('_').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
+}
+
+function formatDate(date?: string) {
+  if (!date) return 'No due date';
+  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(`${date}T00:00:00`));
+}
+
 export default function BacklogList() {
   const [tasks] = useState<BacklogTask[]>(mockTasks);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
-  const [sortKey, setSortKey] = useState<SortKey>("title");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [sortKey, setSortKey] = useState<SortKey>('title');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [page, setPage] = useState(1);
 
-  const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => {
-      const aValue = getSortValue(a, sortKey);
-      const bValue = getSortValue(b, sortKey);
+  const sortedTasks = useMemo(() => [...tasks].sort((a, b) => {
+    const aValue = getSortValue(a, sortKey);
+    const bValue = getSortValue(b, sortKey);
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  }), [tasks, sortKey, sortDirection]);
 
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [tasks, sortKey, sortDirection]);
-
-  const totalPages = Math.ceil(sortedTasks.length / pageSize);
+  const totalPages = Math.max(1, Math.ceil(sortedTasks.length / pageSize));
   const paginatedTasks = sortedTasks.slice((page - 1) * pageSize, page * pageSize);
 
   function handleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
-    } else {
+    if (sortKey === key) setSortDirection((current) => current === 'asc' ? 'desc' : 'asc');
+    else {
       setSortKey(key);
-      setSortDirection("asc");
+      setSortDirection('asc');
     }
-
     setPage(1);
   }
 
   function toggleTaskSelection(taskId: string) {
-    setSelectedTaskIds((current) =>
-      current.includes(taskId)
-        ? current.filter((id) => id !== taskId)
-        : [...current, taskId]
-    );
+    setSelectedTaskIds((current) => current.includes(taskId)
+      ? current.filter((id) => id !== taskId)
+      : [...current, taskId]);
   }
 
   function toggleCurrentPageSelection() {
     const currentPageIds = paginatedTasks.map((task) => task.id);
     const allSelected = currentPageIds.every((id) => selectedTaskIds.includes(id));
-
-    if (allSelected) {
-      setSelectedTaskIds((current) =>
-        current.filter((id) => !currentPageIds.includes(id))
-      );
-    } else {
-      setSelectedTaskIds((current) =>
-        Array.from(new Set([...current, ...currentPageIds]))
-      );
-    }
+    setSelectedTaskIds((current) => allSelected
+      ? current.filter((id) => !currentPageIds.includes(id))
+      : Array.from(new Set([...current, ...currentPageIds])));
   }
 
-  const currentPageAllSelected =
-    paginatedTasks.length > 0 &&
-    paginatedTasks.every((task) => selectedTaskIds.includes(task.id));
+  const currentPageAllSelected = paginatedTasks.length > 0
+    && paginatedTasks.every((task) => selectedTaskIds.includes(task.id));
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow">
-      <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+    <section className="app-card backlog-card animate-enter-delay">
+      <div className="backlog-toolbar">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Backlog List</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            View, sort, and manage tasks from the backlog.
-          </p>
+          <p className="section-kicker">Backlog</p>
+          <h2>Work queue</h2>
+          <p>Sort and select tasks across your current workspace.</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={selectedTaskIds.length === 0}
-            className="rounded-md border px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Bulk move
-          </button>
-          <button
-            type="button"
-            disabled={selectedTaskIds.length === 0}
-            className="rounded-md border px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Bulk assign
-          </button>
-          <button
-            type="button"
-            disabled={selectedTaskIds.length === 0}
-            className="rounded-md border px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Delete selected
-          </button>
+        <div className="backlog-actions" aria-label="Bulk task actions">
+          <span className={`selection-count${selectedTaskIds.length ? ' is-visible' : ''}`}>
+            {selectedTaskIds.length} selected
+          </span>
+          <Button variant="secondary" disabled={!selectedTaskIds.length}><Icon name="activity" size={15} /> Move</Button>
+          <Button variant="secondary" disabled={!selectedTaskIds.length}><Icon name="user" size={15} /> Assign</Button>
+          <Button variant="danger" disabled={!selectedTaskIds.length}>Delete</Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+      <div className="backlog-table-wrap">
+        <table className="backlog-table">
+          <thead>
             <tr>
-              <th className="px-4 py-3 text-left">
-                <input
-                  type="checkbox"
-                  checked={currentPageAllSelected}
-                  onChange={toggleCurrentPageSelection}
-                  aria-label="Select all tasks on current page"
-                />
+              <th className="checkbox-cell">
+                <input type="checkbox" checked={currentPageAllSelected} onChange={toggleCurrentPageSelection} aria-label="Select all tasks on current page" />
               </th>
-              <SortableHeader label="Title" column="title" sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
+              <SortableHeader label="Task" column="title" sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
               <SortableHeader label="Status" column="status" sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
               <SortableHeader label="Priority" column="priority" sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
               <SortableHeader label="Assignee" column="assignee" sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">Due Date</th>
+              <th>Due date</th>
             </tr>
           </thead>
-
-          <tbody className="divide-y divide-gray-100 bg-white">
-            {paginatedTasks.map((task) => (
-              <tr key={task.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedTaskIds.includes(task.id)}
-                    onChange={() => toggleTaskSelection(task.id)}
-                    aria-label={`Select ${task.title}`}
-                  />
-                </td>
-                <td className="px-4 py-3 font-medium text-gray-900">{task.title}</td>
-                <td className="px-4 py-3 text-gray-600">{task.status}</td>
-                <td className="px-4 py-3 text-gray-600">{task.priority}</td>
-                <td className="px-4 py-3 text-gray-600">
-                  {task.assignee?.name ?? "Unassigned"}
-                </td>
-                <td className="px-4 py-3 text-gray-600">{task.dueDate ?? "No due date"}</td>
-              </tr>
-            ))}
+          <tbody>
+            {paginatedTasks.map((task) => {
+              const selected = selectedTaskIds.includes(task.id);
+              return (
+                <tr key={task.id} className={selected ? 'is-selected' : ''}>
+                  <td className="checkbox-cell">
+                    <input type="checkbox" checked={selected} onChange={() => toggleTaskSelection(task.id)} aria-label={`Select ${task.title}`} />
+                  </td>
+                  <td data-label="Task"><strong className="task-table-title">{task.title}</strong></td>
+                  <td data-label="Status"><span className={`status-badge status-${task.status.toLowerCase()}`}>{formatStatus(task.status)}</span></td>
+                  <td data-label="Priority"><span className={`priority-badge priority-${task.priority.toLowerCase()}`}><span />{task.priority.toLowerCase()}</span></td>
+                  <td data-label="Assignee">
+                    <span className="table-assignee"><span className="mini-avatar">{getInitials(task.assignee?.name)}</span>{task.assignee?.name ?? 'Unassigned'}</span>
+                  </td>
+                  <td data-label="Due date"><span className="due-date"><Icon name="calendar" size={14} />{formatDate(task.dueDate)}</span></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-        <span>
-          Page {page} of {totalPages}
-        </span>
-
-        <div className="flex gap-2">
-          <button
-            type="button"
-            disabled={page === 1}
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className="rounded-md border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            disabled={page === totalPages}
-            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-            className="rounded-md border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Next
-          </button>
+      <footer className="backlog-footer">
+        <span>Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, sortedTasks.length)} of {sortedTasks.length} tasks</span>
+        <div className="pagination-controls">
+          <Button variant="secondary" disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Previous</Button>
+          <span className="page-number">{page} / {totalPages}</span>
+          <Button variant="secondary" disabled={page === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Next</Button>
         </div>
-      </div>
-    </div>
+      </footer>
+    </section>
   );
 }
 
 function getSortValue(task: BacklogTask, key: SortKey): string {
-  if (key === "assignee") return task.assignee?.name ?? "";
-  return String(task[key] ?? "");
+  if (key === 'assignee') return task.assignee?.name ?? '';
+  return String(task[key] ?? '');
 }
 
 interface SortableHeaderProps {
@@ -224,20 +157,13 @@ interface SortableHeaderProps {
   onSort: (column: SortKey) => void;
 }
 
-function SortableHeader({
-  label,
-  column,
-  sortKey,
-  sortDirection,
-  onSort,
-}: SortableHeaderProps) {
+function SortableHeader({ label, column, sortKey, sortDirection, onSort }: SortableHeaderProps) {
   const active = sortKey === column;
-
   return (
-    <th className="px-4 py-3 text-left font-semibold text-gray-700">
-      <button type="button" onClick={() => onSort(column)} className="inline-flex items-center gap-1">
+    <th aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button className={`sort-button${active ? ' is-active' : ''}`} type="button" onClick={() => onSort(column)}>
         {label}
-        {active && <span>{sortDirection === "asc" ? "↑" : "↓"}</span>}
+        <Icon name="chevron-down" size={14} className={active && sortDirection === 'asc' ? 'sort-ascending' : ''} />
       </button>
     </th>
   );

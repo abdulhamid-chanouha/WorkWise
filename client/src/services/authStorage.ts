@@ -24,6 +24,12 @@ export function setStoredAuth(auth: StoredAuth): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
 }
 
+export function updateStoredUser(user: User): void {
+  const stored = getStoredAuth();
+  if (!stored) return;
+  setStoredAuth({ ...stored, user });
+}
+
 export function clearStoredAuth(): void {
   localStorage.removeItem(STORAGE_KEY);
 }

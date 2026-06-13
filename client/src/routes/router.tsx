@@ -6,7 +6,14 @@ import DashboardPage from '../pages/DashboardPage';
 import LoginPage from '../pages/LoginPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import RegisterPage from '../pages/RegisterPage';
+import ProjectsPage from '../pages/projectPage';
+import CreateProjectPage from '../pages/createProjectPage';
+import ProjectSettingsPage from '../pages/projectSettingPage';
+import ProfilePage from '../pages/ProfilePage';
+import ProjectOverviewPage from '../pages/ProjectOverviewPage';
 import TasksPage from '../pages/TasksPage';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 
 const router = createBrowserRouter([
   {
@@ -18,6 +25,8 @@ const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
     ],
   },
   {
@@ -27,7 +36,12 @@ const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/projects', element: <ProjectsPage /> },
+          { path: '/projects/create', element: <CreateProjectPage /> },
+          { path: '/projects/:projectId', element: <ProjectOverviewPage /> },
+          { path: '/projects/:projectId/settings', element: <ProjectSettingsPage /> },
           { path: '/tasks', element: <TasksPage /> },
+          { path: '/profile', element: <ProfilePage /> },
         ],
       },
     ],

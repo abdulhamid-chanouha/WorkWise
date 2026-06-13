@@ -4,8 +4,10 @@ import type { LoginPayload, RegisterPayload, User } from '../services/authServic
 export interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
+  isInitializing: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
+  updateUser: (user: User) => void;
   logout: () => void;
 }
 

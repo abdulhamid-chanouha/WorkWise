@@ -45,22 +45,25 @@ enum NotificationType {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
-  avatarUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  name                String
+  email               String   @unique
+  password            String
+  avatarUrl           String?
+  onboardingCompleted Boolean  @default(false)
+  onboardingDismissed Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  projectMembers  ProjectMember[]
-  assignedTasks   Task[]          @relation("TaskAssignee")
-  createdTasks    Task[]          @relation("TaskCreator")
-  comments        Comment[]
-  taskActivities  TaskActivity[]
-  notifications   Notification[]
-  documents       Document[]
-  invitationsSent Invitation[]    @relation("InvitationSender")
+  projectMembers      ProjectMember[]
+  assignedTasks       Task[]               @relation("TaskAssignee")
+  createdTasks        Task[]               @relation("TaskCreator")
+  comments            Comment[]
+  taskActivities      TaskActivity[]
+  notifications       Notification[]
+  documents           Document[]
+  invitationsSent     Invitation[]         @relation("InvitationSender")
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -217,4 +220,17 @@ model Invitation {
   sender  User    @relation("InvitationSender", fields: [senderId], references: [id])
 
   @@map("invitations")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
