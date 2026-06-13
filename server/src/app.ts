@@ -4,7 +4,6 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import healthRoutes from "./routes/health.routes";
 import authRoutes from "./routes/auth.routes";
-import projectRoutes from "./modules/projects/projects.routes";
 import taskRoutes from "./routes/task.routes";
 import commentRoutes from "./routes/comment.routes";
 import { errorHandler } from "./middleware/error.middleware";
@@ -35,7 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 // ── Routes ─────────────────────────────────────────────────
 app.use("/", healthRoutes);
 app.use("/auth", authLimiter, authRoutes);
-app.use("/api/projects", projectRoutes);
+
 app.use("/tasks", taskRoutes);
 app.use("/comments", commentRoutes);
 
