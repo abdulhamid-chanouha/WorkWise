@@ -95,3 +95,120 @@ export const createTask = async (input: CreateTaskInput) => {
     },
   });
 };
+export const getTaskById = async (taskId: string) => {
+  const task = await prisma.task.findUnique({
+    where: {
+      id: taskId,
+    },
+    include: {
+      project: {
+        select: {
+          id: true,
+          name: true,
+          key: true,
+        },
+      },
+      sprint: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      assignee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      comments: {
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+      activities: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+    },
+  });
+
+  if (!task) {
+    throw new NotFoundError("Task not found");
+  }
+
+  return task;
+};
+export interface UpdateTaskInput {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  labels?: string[];
+  dueDate?: string;
+  assigneeId?: string | null;
+  userId: string;
+}
+
+export const updateTask = async (
+  taskId: string,
+  input: UpdateTaskInput
+) => {
+  const existingTask = await prisma.task.findUnique({
+    where: { id: taskId },
+  });
+
+  if (!existingTask) {
+    throw new NotFoundError("Task not found");
+  }
+
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
+    data: {
+      title: input.title,
+      description: input.description,
+      status: input.status,
+      priority: input.priority,
+      labels: input.labels,
+      dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
+      assigneeId: input.assigneeId,
+    },
+  });
+
+  await prisma.taskActivity.create({
+    data: {
+      taskId,
+      userId: input.userId,
+      action: "TASK_UPDATED",
+      details: "Task details were updated",
+    },
+  });
+
+  return updatedTask;
+};
